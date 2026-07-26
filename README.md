@@ -1,6 +1,6 @@
 # hn-userscript
 
-Personal Tampermonkey userscript for news.ycombinator.com.
+Personal userscript for news.ycombinator.com (Violentmonkey / Tampermonkey).
 
 Forked from [mgladdish/website-customisations](https://github.com/mgladdish/website-customisations)
 (MIT licensed) as of its v31, with an added comment sort control.
@@ -22,8 +22,9 @@ Forked from [mgladdish/website-customisations](https://github.com/mgladdish/webs
 
 ## Install
 
-Add via Tampermonkey using the raw URL:
+With Violentmonkey (or Tampermonkey) installed, just navigate to the raw URL —
+it's recognized as a userscript and prompts to install automatically:
 
 ```
-https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.js
+https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.user.js
 ```

@@ -4,8 +4,8 @@
 // @version      33
 // @description  Make Hacker News more legible, plus a comment sort control
 // @author       Martin Gladdish; sort control by winterrx
-// @downloadURL  https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.js
-// @updateURL    https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.js
+// @downloadURL  https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.user.js
+// @updateURL    https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.user.js
 // @supportURL   https://github.com/winterrx/hn-userscript
 // @match        https://news.ycombinator.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=ycombinator.com
