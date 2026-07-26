@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Hacker News (winterrx fork)
+// @name         Hacker News (winterrx: sort + quotes only)
 // @namespace    http://tampermonkey.net/
-// @version      33
-// @description  Make Hacker News more legible, plus a comment sort control
-// @author       Martin Gladdish; sort control by winterrx
+// @version      34
+// @description  Sortable comments (newest/oldest/most replies) + inline quote styling. No layout/legibility changes.
+// @author       winterrx
 // @downloadURL  https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.user.js
 // @updateURL    https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.user.js
 // @supportURL   https://github.com/winterrx/hn-userscript
@@ -12,198 +12,35 @@
 // @license      MIT
 // ==/UserScript==
 
-// Forked from https://github.com/mgladdish/website-customisations
-// (news.ycombinator.com/tampermonkey.js, MIT licensed) as of its v31.
-//
-// v32: added a comment sort control (default / newest / oldest / most replies)
-// on item pages, since HN doesn't expose comment scores to most users so
-// "most upvotes" isn't reliably available — replies is the closest honest proxy.
-//
-// v33: force light background/text colours (color-scheme: light + !important)
-// so the styling isn't fought by a dark-mode/auto-dark browser extension.
+// v34: dropped everything from the original mgladdish/website-customisations
+// fork except comment sorting and quote styling — no font/layout resets, no
+// homepage margin changes, no downvoted-comment greying, no comment-box
+// collapsing. Stock HN rendering everywhere except those two features.
 
 const tampermonkeyScript = function() {
     'use strict';
 
     document.head.insertAdjacentHTML("beforeend", `<style>
-      :root {
-        --colour-hn-orange: #ff6600;
-        --colour-hn-orange-pale: rgba(255, 102, 0, 0.05);
-        --gutter: 0.5rem;
-        --border-radius: 3px;
-      }
-
-      /* Reset font everywhere */
-      html, body, td, .title, .comment, .default {
-        font-family: 'Verdana', 'Arial', sans-serif;
-      }
-
-      /* Force light rendering even if a dark-mode/auto-dark browser
-         extension tries to recolour the page, so text/quote styling
-         always looks the way this script intends. */
-      html {
-        color-scheme: light only;
-      }
-
-      html, body {
-        margin-top: 0;
-        background-color: white !important;
-        color: black !important;
-      }
-
-      body {
-        padding: 0;
-        margin: 0;
-      }
-
-      body, td, .title, .pagetop, .comment {
-        font-size: 1rem;
-      }
-
-      html[op='news'] .title,
-      .votelinks, 
-      .fatitem .title+.votelinks {
-        vertical-align: inherit;
-      }
-      
-      .comment-tree .votelinks,
-      html[op='threads'] .votelinks,
-      html[op='item'] .votelinks,
-      xhtml[op='newcomments'] .votelinks{
-        vertical-align: top;
-      }
-
-      span.titleline {
-        font-size: 1rem;
-        margin-top: var(--gutter);
-        margin-bottom: var(--gutter);
-        display: block;
-      }
-      
-      html[op='item'] span.titleline {
-        font-size: 1.2rem;
-      }
-
-      .rank {
-        display: none
-      }
-
-      html[op='news']        #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1),
-      html[op='newest']      #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1),
-      html[op='ask']         #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1),
-      html[op='newcomments'] #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1),
-      html[op='shownew']     #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1), 
-      html[op='submitted']   #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1),
-      html[op='favorites']   #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(2),
-      html[op='front']       #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(2),
-      html[op='show']        #hnmain > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(2) {
-         margin-left: var(--gutter);
-      }
-
-      .sitebit.comhead {
-        margin-left: var(--gutter);
-      }
-
-      .subtext, .subline {
-        font-size: .75rem;
-      }
-
-      #hnmain {
-        width: 100%;
-        background-color: white;
-      }
-
-      /* Menu bar */
-
-      #hnmain > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) {
-        padding: var(--gutter);
-      }
-      #hnmain > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) {
-        padding-right: var(--gutter) !important;
-      }
-
-
-      .comment, .toptext {
-        max-width: 40em;
-      }
-      .toptext, a {
-        color: black;
-      }
-      a:visited {
-        color: #4c2c92;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      
-
-      input {
-        padding: var(--gutter);
-      }
-      input, textarea {
-        background-color: white;
-        border: 2px solid var(--colour-hn-orange);
-        border-radius: var(--border-radius);
-      }
-      input[type='button'], input[type='submit'] {
-        cursor: pointer;
-      }   
-
-
-      /* Custom styles added via javascript */
-
-      .downvoted {
-        background-color: rgb(245, 245, 245);
-        border-radius: var(--border-radius);
-        padding: 6px;
-      }
-      .downvoted .commtext {
-        color: black;
-        font-size: smaller;
-      }
-      
       .quote {
-        border-left: 3px solid var(--colour-hn-orange);
+        border-left: 3px solid #ff6600;
         padding: 6px 6px 6px 9px;
         font-style: italic;
-        background-color: var(--colour-hn-orange-pale);
-        border-radius: var(--border-radius);
-      }
-      
-      .hidden {
-        display: none;
-      }
-
-      .showComment a, .hideComment, .hideComment:link, .hideComment:visited {
-        color: var(--colour-hn-orange);
-        text-decoration: underline;
-      }
-      .hideComment {
-        margin-left: var(--gutter);
+        background-color: rgba(255, 102, 0, 0.05);
+        border-radius: 3px;
       }
 
       .commentSort {
         display: block;
-        margin: var(--gutter) 0 var(--gutter) var(--gutter);
+        margin: 0.5rem 0 0.5rem 0.5rem;
         font-size: .75rem;
       }
       .commentSort select {
-        font-family: 'Verdana', 'Arial', sans-serif;
         font-size: .75rem;
-        border: 1px solid var(--colour-hn-orange);
-        border-radius: var(--border-radius);
-        background-color: white;
+        border: 1px solid #ff6600;
+        border-radius: 3px;
         padding: 2px 4px;
       }
-
     </style>`);
-
-    const comments = document.querySelectorAll('.commtext');
-    comments.forEach(e => {
-        if (!e.classList.contains('c00')) {
-            e.parentElement.classList.add('downvoted');
-        }
-    });
 
     let nodes = [];
 
@@ -237,36 +74,6 @@ const tampermonkeyScript = function() {
             n.innerText = n.innerText.replace(">", "");
         }
     });
-
-    const addComment = document.querySelector("html[op='item'] .fatitem tr:last-of-type");
-    if (addComment) {
-        addComment.classList.add('hidden');
-        const showComment = document.createElement('tr');
-        showComment.innerHTML = `
-           <td colspan='2'></td>
-           <td>
-             <a href='#'>show comment box</a>
-           </td>
-        `;
-        showComment.classList.add('showComment');
-        showComment.querySelector('a').addEventListener('click', (e) => {
-            showComment.classList.toggle('hidden');
-            addComment.classList.toggle('hidden');
-        });
-        addComment.parentNode.insertBefore(showComment, addComment);
-
-        const hideComment = document.createElement('a');
-        hideComment.setAttribute('href', '#');
-        hideComment.innerText = 'hide comment box';
-        hideComment.classList.add('hideComment');
-        hideComment.addEventListener('click', (e) => {
-            showComment.classList.toggle('hidden');
-            addComment.classList.toggle('hidden');
-        });
-
-        const commentForm = document.querySelector("form[action='comment']");
-        commentForm.append(hideComment);
-    }
 
     addCommentSortControl();
 }
