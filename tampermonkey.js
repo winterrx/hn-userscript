@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hacker News (winterrx fork)
 // @namespace    http://tampermonkey.net/
-// @version      32
+// @version      33
 // @description  Make Hacker News more legible, plus a comment sort control
 // @author       Martin Gladdish; sort control by winterrx
 // @downloadURL  https://raw.githubusercontent.com/winterrx/hn-userscript/main/tampermonkey.js
@@ -18,6 +18,9 @@
 // v32: added a comment sort control (default / newest / oldest / most replies)
 // on item pages, since HN doesn't expose comment scores to most users so
 // "most upvotes" isn't reliably available — replies is the closest honest proxy.
+//
+// v33: force light background/text colours (color-scheme: light + !important)
+// so the styling isn't fought by a dark-mode/auto-dark browser extension.
 
 const tampermonkeyScript = function() {
     'use strict';
@@ -35,8 +38,17 @@ const tampermonkeyScript = function() {
         font-family: 'Verdana', 'Arial', sans-serif;
       }
 
+      /* Force light rendering even if a dark-mode/auto-dark browser
+         extension tries to recolour the page, so text/quote styling
+         always looks the way this script intends. */
+      html {
+        color-scheme: light only;
+      }
+
       html, body {
         margin-top: 0;
+        background-color: white !important;
+        color: black !important;
       }
 
       body {
